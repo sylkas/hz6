@@ -58,17 +58,9 @@ const deck =
 
 ];
 
-
-let game = deck;
 getRandomIndex = arrayLength => {
     return(Math.floor(Math.random() * arrayLength));
 };
-
-showCards = cardsArray => {
-    cardsArray.map(p => p.value + ' ' + p.colour)
-            .forEach(p => console.log(p));
-
-}
 
 getDistribution = d => {
     let dist = [];
@@ -78,52 +70,147 @@ getDistribution = d => {
         ind = getRandomIndex(d.length);
         a = d.splice(ind,1)
         dist = dist.concat(a);
-        //showCards(a);
     }
     return dist;
 }
 
-getHighCard = p => {
-    //let a  = p.map(k => k.value);
-    let a  = p.map(k => k.i);
-    a.sort();
-    return  p.filter(p => p.i === a[0]);       
+showCards = cardsArray => {
+    cardsArray.map(p => p.value + ' ' + p.colour)
+            .forEach(p => console.log(p));
+}
+
+ifColour = p => {
+    let result = false;
+    let a = p.map(k => k.colour)
+    .filter((value, index, self) => self.indexOf(value) === index);
+    if(a.length === 1) result = true;
+    return result;
+}
+
+getCountGroup = p => {
+    let count = [];
+    let a = p.map(k => k.value)
+            .filter((value, index, self) => self.indexOf(value) === index);
+    for(let i = 0; i< a.length; i++){
+        count.push( p.filter( e => e.value === a[i] ).length );
+    }
+    return count;
 }
 
 ifRoyalFlush = p => {
-    const result = false;
-    let a = p.map(k => k.colour)
-    .filter((value, index, self) => self.indexOf(value) === index);
-    if (a.length === 1) {
+    let result = false;
+    const countGroup = getCountGroup(p);
+    if ( ifColour(p) ) {
         let a  = p.map(k => k.i);
         a.sort();
-        if(a[0] === '00' && a[4] === '04') result = true;
+        if( a[0] === '00' && a[4] === '04' && countGroup.length === 5) result = true;
     }
     return result;
 }
 
 ifStraightFlush = p => {
-    const result = false;
-    let a = p.map(k => k.colour)
-    .filter((value, index, self) => self.indexOf(value) === index);
-    if (a.length === 1) {
+    let result = false;
+    const countGroup = getCountGroup(p);
+    if ( ifColour(p) ) {
         let a  = p.map(k => k.i);
         a.sort();
-        if( parseInt( a[a.length-1] ) - parseInt( a[0] ) === 4 ) result = true;
+        if( (parseInt( a[a.length-1] ) - parseInt( a[0] ) === 4) && a[0] !== '00' && countGroup.length === 5 ) 
+            result = true;
     }
     return result;
 }
 
+ifFourOfKind = p => {
+    let result = false;
+    const countGroup = getCountGroup(p);
+    if( countGroup.indexOf(4) >= 0 ) result = true;
+    return result;
+} 
 
+ifFullHouse = p => {
+    let result = false;
+    const countGroup = getCountGroup(p); 
+    if( countGroup.indexOf(3) >= 0 && countGroup.indexOf(2) >= 0) result = true;
+    return result;
+}
 
-let distribution = getDistribution(game);
+ifFlush = p => {
+    let result = false;
+    if ( ifColour(p) ) {
+        let a  = p.map(k => k.i);
+        a.sort();
+        if( parseInt( a[a.length-1] ) - parseInt( a[0] ) >= 8 ) result = true;       
+    }
+    return result;
+}
+
+ifStraight = p => {
+    let result = false;
+    const countGroup = getCountGroup(p);
+    if ( ifColour(p) === false ) {
+        let a  = p.map(k => k.i);
+        a.sort();
+        if( ( parseInt( a[a.length-1] ) - parseInt( a[0] ) === 4 ) &&  countGroup.length === 5 ) result = true;            
+    }
+    return result;
+}
+
+ifThreeOfKind = p => {
+    let result = false;
+    const countGroup = getCountGroup(p);
+    if( countGroup.indexOf(3) >= 0 && countGroup.indexOf(2) < 0) result = true;
+    return result;    
+}
+
+ifTwoPair = p => {
+    let result = false;
+    const countGroup = getCountGroup(p);
+    const idx = countGroup.indexOf(2);
+    if( idx >= 0 && countGroup.indexOf(2, idx+1) >= 0) result = true;
+    return result;   
+}
+
+ifOnePair = p => {
+    let result = false;
+    const countGroup = getCountGroup(p);
+    const idx = countGroup.indexOf(2);
+    if( idx >= 0 && countGroup.indexOf(2, idx+1) < 0) result = true;
+    return result;      
+}
+
+getHighCard = p => {
+    let result;
+    let a  = p.map(k => k.i);
+    a.sort();
+    result = p.filter(p => p.i === a[0]);
+    return  result[0].value;       
+}
+
+let distribution = getDistribution(deck);
 
 showCards(distribution);
-const dis = getHighCard(distribution);
-console.log(JSON.stringify(dis));
-//showCards(dis);
-console.log(ifRoyalFlush(distribution));
-console.log(ifStraightFlush(distribution));
-// let r = getHighCard(distribution);
-// console.log(JSON.stringify(r));
+
+if(ifRoyalFlush(distribution)) {
+    console.log("RoyalFlush");
+} else if(ifStraightFlush(distribution)) {
+    console.log("StraightFlush");
+} else if(ifFourOfKind(distribution)) {
+    console.log("FourOfKind"); 
+} else if(ifFullHouse(distribution)) {
+    console.log("FullHouse");     
+} else if(ifFlush(distribution)) {
+    console.log("Flush"); 
+} else if(ifStraight(distribution)) {
+    console.log("Straight");  
+} else if(ifThreeOfKind(distribution)) {
+    console.log("ThreeOfKind");   
+} else if(ifTwoPair(distribution)) {
+    console.log("TwoPair"); 
+} else if(ifOnePair(distribution)) {
+    console.log("OnePair");            
+} else {
+    console.log("HighCard " + getHighCard(distribution));
+};
+
+
 
